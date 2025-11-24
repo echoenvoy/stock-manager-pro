@@ -1,0 +1,36 @@
+stock-manager/
+├── 📁 frontend/
+│   ├── main.html
+│   ├── stock.html
+│   ├── delivery.html
+│   ├── Employee.html
+│   ├── reports.html
+│   ├── settings.html
+│   ├── Login.html
+│   ├── Style.css
+│   ├── script.js
+│   └── chariot.png
+├── 📁 backend/
+│   ├── 📁 routes/
+│   │   ├── __init__.py
+│   │   ├── products.py
+│   │   ├── employees.py
+│   │   ├── deliveries.py
+│   │   └── auth_routes.py
+│   ├── 📁 static/
+│   ├── 📁 templates/
+│   ├── app.py
+│   ├── models.py
+│   ├── auth.py
+│   └── database.py
+├── 📁 logs/
+├── 📁 backups/
+├── .env
+├── .env.example
+├── requirements.txt
+├── config.py
+├── setup.py
+├── run.py
+├── start.sh (Linux/Mac)
+├── start-windows.bat (Windows)
+└── README.md
