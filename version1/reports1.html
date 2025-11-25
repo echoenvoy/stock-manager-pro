@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Manager - Reports</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="Style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <link rel="icon" href="chariot.png" type="image/png" sizes="264x264">
+  <style>
+    /* Reports Page Styles */
+.report-filters {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.filter-input {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.report-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.summary-card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.summary-icon {
+  font-size: 1.8rem;
+  color: var(--primary-color);
+}
+
+.summary-content h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.summary-content p {
+  margin: 5px 0 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.chart-container {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  height: 400px; /* Fixed height */
+  position: relative; /* Needed for Chart.js responsiveness */
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.in-progress {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-badge.delivered {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.delayed {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-badge.low-stock {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.out-of-stock {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-badge.in-stock {
+  background-color: #d4edda;
+  color: #155724;
+}
+/* Add to your Style.css */
+.charts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.chart-container {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  flex: 1;
+  min-width: 300px;
+  height: 350px;
+  position: relative;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .charts-row {
+    flex-direction: column;
+  }
+  .chart-container {
+    min-width: 100%;
+    height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .report-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filter-group {
+    width: 100%;
+  }
+  
+  .filter-select, .filter-input {
+    width: 100%;
+  }
+  
+  .report-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .chart-container {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .report-summary {
+    grid-template-columns: 1fr;
+  }
+  .chart-container {
+    height: 150px;
+  }
+}
+  </style>
+</head>
+<body>
+  <!--header-->
+  <header>
+    <div class="logo">
+      <i class="fas fa-boxes"></i>
+      <h1>StockMaster Professional</h1>
+    </div>
+    <div class="header-controls">
+      <button class="theme-toggle" id="theme-toggle">
+          <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <nav class="main-nav">
+    <ul class="nav-list">
+      <li><a href="main.html" class="nav-link" data-page="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="stock.html" class="nav-link" data-page="products"><i class="fas fa-box"></i> Products</a></li>
+      <li><a href="delivery.html" class="nav-link" data-page="delivery"><i class="fas fa-truck"></i> Delivery</a></li>
+      <li><a href="Employee.html" class="nav-link" data-page="delivery"><i class="fas fa-users"></i> Employee</a></li>
+      <li><a href="reports.html" class="nav-link active" data-page="reports"><i class="fas fa-chart-line"></i> Reports</a></li>
+      <li><a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
+    </ul>
+  </nav>
+
+  <!-- Reports Page -->
+  <div id="reports-page">
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">Reports Dashboard</h2>
+        <div class="report-filters">
+          <div class="filter-group">
+            <label for="report-type">Report Type:</label>
+            <select id="report-type" class="filter-select">
+              <option value="inventory">Inventory Status</option>
+              <option value="sales">Sales Report</option>
+              <option value="delivery">Delivery Performance</option>
+              <option value="trends">Purchase Trends</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="date-range">Date Range:</label>
+            <select id="date-range" class="filter-select">
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+              <option value="year">This Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          <div class="filter-group date-inputs" id="custom-date-range" style="display:none;">
+            <input type="date" id="start-date" class="filter-input">
+            <span>to</span>
+            <input type="date" id="end-date" class="filter-input">
+          </div>
+          <button class="btn btn-primary" id="generate-report">
+            <i class="fas fa-sync-alt"></i> Generate
+          </button>
+        </div>
+      </div>
+
+      <div class="report-actions">
+        <button class="btn btn-outline" id="export-pdf">
+          <i class="fas fa-file-pdf"></i> Export PDF
+        </button>
+        <button class="btn btn-outline" id="export-excel">
+          <i class="fas fa-file-excel"></i> Export Excel
+        </button>
+        <button class="btn btn-outline" id="export-csv">
+          <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="report-container">
+      <div class="report-summary">
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-boxes"></i>
+          </div>
+          <div class="summary-content">
+            <h3>Total Products</h3>
+            <p id="total-products">0</p>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="summary-content">
+            <h3>Low Stock</h3>
+            <p id="low-stock">0</p>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-times-circle"></i>
+          </div>
+          <div class="summary-content">
+            <h3>Out of Stock</h3>
+            <p id="out-of-stock">0</p>
+          </div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">
+            <i class="fas fa-truck"></i>
+          </div>
+          <div class="summary-content">
+            <h3>Deliveries</h3>
+            <p id="total-deliveries">0</p>
+          </div>
+        </div>
+      </div>
+
+    <div class="charts-row">
+        <div class="chart-container">
+            <canvas id="inventoryChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <canvas id="deliveryChart"></canvas>
+        </div>
+    </div>
+
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Inventory Status</h2>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="inventory-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Product Name</th>
+                <th>Current Stock</th>
+                <th>Threshold</th>
+                <th>Status</th>
+                <th>Last Delivery</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Delivery Performance</h2>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="delivery-table">
+            <thead>
+              <tr>
+                <th>Delivery ID</th>
+                <th>Customer</th>
+                <th>Products</th>
+                <th>Order Date</th>
+                <th>Delivery Date</th>
+                <th>Status</th>
+                <th>Delay (days)</th>
+              </tr>
+            </thead>
+            <tbody id="delivery-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy;2025 Stock Manager Pro. All rights reserved.</p>
+  </footer>
+  <script src="script.js"></script>
+  <script >
+    document.addEventListener('DOMContentLoaded', function() {
+  // DOM Elements
+  const dateRangeSelect = document.getElementById('date-range');
+  const customDateRange = document.getElementById('custom-date-range');
+  const generateBtn = document.getElementById('generate-report');
+  const exportPdfBtn = document.getElementById('export-pdf');
+  const exportExcelBtn = document.getElementById('export-excel');
+  const exportCsvBtn = document.getElementById('export-csv');
+  
+  // Initialize charts
+  let inventoryChart;
+  let deliveryChart;
+  
+  // Event Listeners
+  dateRangeSelect.addEventListener('change', toggleCustomDateRange);
+  generateBtn.addEventListener('click', generateReport);
+  exportPdfBtn.addEventListener('click', exportToPdf);
+  exportExcelBtn.addEventListener('click', exportToExcel);
+  exportCsvBtn.addEventListener('click', exportToCsv);
+  
+  // Initial load
+  loadSummaryData();
+  initializeCharts();
+  renderInventoryTable();
+  renderDeliveryTable();
+  
+  // Functions
+  function toggleCustomDateRange() {
+    if (dateRangeSelect.value === 'custom') {
+      customDateRange.style.display = 'flex';
+    } else {
+      customDateRange.style.display = 'none';
+    }
+  }
+  function loadSummaryData() {
+    const stock = getStock();
+    const deliveries = getDelivery();
+    
+    // Calculate summary metrics
+    const totalProducts = stock.length;
+    const lowStock = stock.filter(item => item.qty < (item.threshold || 10)).length;
+    const outOfStock = stock.filter(item => item.qty <= 0).length;
+    const totalDeliveries = deliveries.length;
+    
+    // Update DOM
+    document.getElementById('total-products').textContent = totalProducts;
+    document.getElementById('low-stock').textContent = lowStock;
+    document.getElementById('out-of-stock').textContent = outOfStock;
+    document.getElementById('total-deliveries').textContent = totalDeliveries;
+  }
+  
+  function initializeCharts() {
+    const stock = getStock();
+    const deliveries = getDelivery();
+    
+    // Inventory Chart
+    const inventoryCtx = document.getElementById('inventoryChart').getContext('2d');
+    inventoryChart = new Chart(inventoryCtx, {
+      type: 'bar',
+      data: {
+        labels: stock.slice(0, 10).map(item => item.name),
+        datasets: [{
+          label: 'Current Stock',
+          data: stock.slice(0, 10).map(item => item.qty),
+          backgroundColor: stock.slice(0, 10).map(item => 
+            item.qty <= 0 ? 'rgba(220, 53, 69, 0.7)' : 
+            item.qty < (item.threshold || 10) ? 'rgba(255, 193, 7, 0.7)' : 
+            'rgba(40, 167, 69, 0.7)'
+          ),
+          borderColor: stock.slice(0, 10).map(item => 
+            item.qty <= 0 ? 'rgba(220, 53, 69, 1)' : 
+            item.qty < (item.threshold || 10) ? 'rgba(255, 193, 7, 1)' : 
+            'rgba(40, 167, 69, 1)'
+          ),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Top 10 Products Inventory Status'
+          },
+          tooltip: {
+            callbacks: {
+              afterLabel: function(context) {
+                const index = context.dataIndex;
+                const item = stock[index];
+                return `Threshold: ${item.threshold || 10}\nStatus: ${
+                  item.qty <= 0 ? 'Out of Stock' : 
+                  item.qty < (item.threshold || 10) ? 'Low Stock' : 'In Stock'
+                }`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Quantity'
+            }
+          }
+        }
+      }
+    });
+    
+    // Delivery Chart
+    const deliveryCtx = document.getElementById('deliveryChart').getContext('2d');
+    
+    // Calculate delivery status counts
+    const statusCounts = {
+      pending: 0,
+      'in-progress': 0,
+      delivered: 0,
+      delayed: 0
+    };
+    
+    deliveries.forEach((delivery, index) => {
+      const status = determineDeliveryStatus(index);
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    
+    deliveryChart = new Chart(deliveryCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Pending', 'In Progress', 'Delivered', 'Delayed'],
+        datasets: [{
+          data: [
+            statusCounts.pending,
+            statusCounts['in-progress'],
+            statusCounts.delivered,
+            statusCounts.delayed
+          ],
+          backgroundColor: [
+            'rgba(255, 193, 7, 0.7)',
+            'rgba(0, 123, 255, 0.7)',
+            'rgba(40, 167, 69, 0.7)',
+            'rgba(220, 53, 69, 0.7)'
+          ],
+          borderColor: [
+            'rgba(255, 193, 7, 1)',
+            'rgba(0, 123, 255, 1)',
+            'rgba(40, 167, 69, 1)',
+            'rgba(220, 53, 69, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Delivery Status Distribution'
+          },
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  }
+  
+  function determineDeliveryStatus(index) {
+    const deliveries = getDelivery();
+    if (index < 0 || index >= deliveries.length) return 'pending';
+    
+    const now = new Date();
+    const deliveryDate = new Date(deliveries[index].dateOrder);
+    const receptionDate = new Date(deliveries[index].dateReceived);
+    
+    if (now < deliveryDate) {
+      return 'pending';
+    } else if (now >= deliveryDate && now < receptionDate) {
+      return 'in-progress';
+    } else if (now >= receptionDate) {
+      // Check if delivery was delayed
+      const expectedDate = new Date(deliveryDate);
+      expectedDate.setDate(expectedDate.getDate() + 3); // Assuming 3 days is standard delivery time
+      return now > expectedDate ? 'delayed' : 'delivered';
+    }
+    
+    return 'pending';
+  }
+  
+  function renderInventoryTable() {
+    const stock = getStock();
+    const tbody = document.getElementById('inventory-tbody');
+    
+    if (stock.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 20px; color: #6c757d;">
+            <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 10px;"></i>
+            <p>No products in inventory. Add your first product!</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    stock.forEach(item => {
+      const status = item.qty <= 0 ? 'out-of-stock' : 
+                   item.qty < (item.threshold || 10) ? 'low-stock' : 'in-stock';
+      const statusText = item.qty <= 0 ? 'Out of Stock' : 
+                       item.qty < (item.threshold || 10) ? 'Low Stock' : 'In Stock';
+      
+      tbody.innerHTML += `
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.name}</td>
+          <td>${item.qty}</td>
+          <td>${item.threshold || 10}</td>
+          <td><span class="status-badge ${status}">${statusText}</span></td>
+          <td>${item.date_added || 'N/A'}</td>
+        </tr>
+      `;
+    });
+  }
+  
+  function renderDeliveryTable() {
+    const deliveries = getDelivery();
+    const tbody = document.getElementById('delivery-tbody');
+    
+    if (deliveries.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 20px; color: #6c757d;">
+            <i class="fas fa-truck" style="font-size: 3rem; margin-bottom: 10px;"></i>
+            <p>No deliveries recorded. Create your first delivery!</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    deliveries.forEach((item, index) => {
+      const status = determineDeliveryStatus(index);
+      const statusText = status === 'in-progress' ? 'In Progress' : 
+                       status.charAt(0).toUpperCase() + status.slice(1);
+      
+      // Calculate delay days
+      let delayDays = 0;
+      if (status === 'delayed') {
+        const expectedDate = new Date(item.dateOrder);
+        expectedDate.setDate(expectedDate.getDate() + 3); // 3 days expected delivery
+        const actualDate = new Date(item.dateReceived);
+        delayDays = Math.ceil((actualDate - expectedDate) / (1000 * 60 * 60 * 24));
+      }
+      
+      tbody.innerHTML += `
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.Customer_name}</td>
+          <td>${item.name_product}</td>
+          <td>${item.dateOrder}</td>
+          <td>${item.dateReceived}</td>
+          <td><span class="status-badge ${status}">${statusText}</span></td>
+          <td>${status === 'delayed' ? delayDays : '-'}</td>
+        </tr>
+      `;
+    });
+  }
+  
+  function generateReport() {
+    // In a real app, this would filter data based on selected options
+    const reportType = document.getElementById('report-type').value;
+    const dateRange = document.getElementById('date-range').value;
+    
+    // For now, we'll just refresh the data
+    loadSummaryData();
+    inventoryChart.update();
+    deliveryChart.update();
+    renderInventoryTable();
+    renderDeliveryTable();
+    
+    // Show notification
+    showToast(`Generated ${reportType} report for ${dateRange}`);
+  }
+  
+  function exportToPdf() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text('StockMaster Professional Report', 105, 20, { align: 'center' });
+    
+    // Add date
+    doc.setFontSize(12);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
+    
+    // Add summary section
+    doc.setFontSize(14);
+    doc.text('Summary', 14, 40);
+    
+    doc.setFontSize(10);
+    doc.text(`Total Products: ${document.getElementById('total-products').textContent}`, 14, 50);
+    doc.text(`Low Stock Items: ${document.getElementById('low-stock').textContent}`, 14, 60);
+    doc.text(`Out of Stock Items: ${document.getElementById('out-of-stock').textContent}`, 14, 70);
+    doc.text(`Total Deliveries: ${document.getElementById('total-deliveries').textContent}`, 14, 80);
+    
+    // Add inventory table
+    doc.autoTable({
+      startY: 90,
+      head: [['id', 'Product', 'Quantity', 'Status']],
+      body: Array.from(document.querySelectorAll('#inventory-table tbody tr')).map(row => {
+        const cells = row.cells;
+        return [
+          cells[0].textContent,
+          cells[1].textContent,
+          cells[2].textContent,
+          cells[4].textContent
+        ];
+      }),
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+    
+    // Add delivery table
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 20,
+      head: [['Delivery ID', 'Customer', 'Status', 'Delay Days']],
+      body: Array.from(document.querySelectorAll('#delivery-table tbody tr')).map(row => {
+        const cells = row.cells;
+        return [
+          cells[0].textContent,
+          cells[1].textContent,
+          cells[5].textContent,
+          cells[6].textContent
+        ];
+      }),
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+    
+    // Save the PDF
+    doc.save('StockMaster_Report.pdf');
+  }
+  
+  function exportToExcel() {
+    const stock = getStock();
+    const deliveries = getDelivery();
+    
+    // Prepare inventory data
+    const inventoryData = stock.map(item => ({
+      'ID': item.id,
+      'Product Name': item.name,
+      'Quantity': item.qty,
+      'Threshold': item.threshold || 10,
+      'Status': item.qty <= 0 ? 'Out of Stock' : 
+               item.qty < (item.threshold || 10) ? 'Low Stock' : 'In Stock',
+      'Last Updated': item.date_added || 'N/A'
+    }));
+    
+    // Prepare delivery data
+    const deliveryData = deliveries.map((item, index) => {
+      const status = determineDeliveryStatus(index);
+      const statusText = status === 'in-progress' ? 'In Progress' : 
+                       status.charAt(0).toUpperCase() + status.slice(1);
+      
+      let delayDays = 0;
+      if (status === 'delayed') {
+        const expectedDate = new Date(item.dateOrder);
+        expectedDate.setDate(expectedDate.getDate() + 3);
+        const actualDate = new Date(item.dateReceived);
+        delayDays = Math.ceil((actualDate - expectedDate) / (1000 * 60 * 60 * 24));
+      }
+      
+      return {
+        'Delivery ID': item.id,
+        'Customer': item.Customer_name,
+        'Product': item.name_product,
+        'Order Date': item.dateOrder,
+        'Delivery Date': item.dateReceived,
+        'Status': statusText,
+        'Delay Days': status === 'delayed' ? delayDays : '-'
+      };
+    });
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Add inventory sheet
+    const inventoryWS = XLSX.utils.json_to_sheet(inventoryData);
+    XLSX.utils.book_append_sheet(wb, inventoryWS, 'Inventory');
+    
+    // Add delivery sheet
+    const deliveryWS = XLSX.utils.json_to_sheet(deliveryData);
+    XLSX.utils.book_append_sheet(wb, deliveryWS, 'Deliveries');
+    
+    // Export
+    XLSX.writeFile(wb, 'StockMaster_Report.xlsx');
+  }
+  
+  function exportToCsv() {
+    const stock = getStock();
+    
+    // Prepare CSV content for inventory
+    let csvContent = 'Product Name,Reference,Quantity,Threshold,Status,Last Updated\n';
+    
+    stock.forEach(item => {
+      const status = item.qty <= 0 ? 'Out of Stock' : 
+                   item.qty < (item.threshold || 10) ? 'Low Stock' : 'In Stock';
+      csvContent += `"${item.name}","${item.ref}",${item.qty},${item.threshold || 10},"${status}","${item.date_added || 'N/A'}"\n`;
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'StockMaster_Inventory.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
+  function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 300);
+    }, 3000);
+  }
+});
+  </script>
+</body>
+</html>

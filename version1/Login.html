@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login Page</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      background: linear-gradient(135deg, #2980b9, #6dd5fa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      background: #fff;
+      padding: 2.5rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-container h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      padding-left: 2.7rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      border-color: #2980b9;
+      outline: none;
+    }
+
+    .form-group i {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      color: #999;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      background-color: #2980b9;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .login-btn:hover {
+      background-color: #1f6391;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .login-footer a {
+      color: #2980b9;
+      text-decoration: none;
+    }
+
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media screen and (max-width: 480px) {
+      .login-container {
+        margin: 1rem;
+      }
+    }
+  </style>
+  <!-- Icons (Font Awesome CDN) -->
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Sign In</h2>
+    <form onsubmit="return login(event)">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <i class="fas fa-user"></i>
+        <input type="text" id="username" placeholder="Enter your username" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <i class="fas fa-lock"></i>
+        <input type="password" id="password" placeholder="Enter your password" required />
+      </div>
+      <p id="error" style="color: red; text-align: center; margin-top: 1rem;"></p>
+      <button type="submit" class="login-btn">Login</button>
+      <div class="login-footer">
+        <p> <a href="#">Sign Up</a></p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function login(event) {
+      event.preventDefault();
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+
+      // Set your valid username and password here
+      if (user === "admin" && pass === "1234") {
+        window.location.href = "main.html"; // Redirect if correct
+      } else {
+        document.getElementById('error').innerText = "Invalid username or password.";
+      }
+    }
+  </script>
+
+</body>
+</html>

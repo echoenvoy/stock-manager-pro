@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Manager - Employee</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="Style.css">
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <link rel="icon" href="chariot.png" type="image/png" sizes="264x264">
+</head>
+<body>
+  <!--header-->
+  <header>
+    <div class="logo">
+      <i class="fas fa-boxes"></i>
+      <h1>StockMaster Professional</h1>
+    </div>
+    <div class="header-controls">
+      <button class="theme-toggle" id="theme-toggle">
+          <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+    <nav class="main-nav">
+  <ul class="nav-list">
+      <li><a href="main.html" class="nav-link" data-page="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="stock.html" class="nav-link " data-page="employees"><i class="fas fa-box"></i> Products</a></li>
+      <li><a href="delivery.html" class="nav-link" data-page="delivery"><i class="fas fa-truck"></i> Delivery</a></li>
+      <li><a href="Employee.html" class="nav-link active" data-page="delivery"><i class="fas fa-users"></i> Employee</a></li>
+      <li><a href="reports.html" class="nav-link"><i class="fas fa-chart-line"></i> Reports</a></li>
+      <li><a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
+  </ul>
+  </nav>
+
+  <!-- Employees Page -->
+    
+    
+      <div id="notification" class="notification hidden"></div>
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Employee  Management</h2>
+          <div class="section-actions">
+            <button class="btn btn-outline" onclick="exportEmployee()">
+              <i class="fas fa-file-export"></i> Export
+            </button>
+
+            <button  onclick="location.href='#employee-form'" class="btn btn-primary" id="add-employee-btn">
+              <i class="fas fa-plus"></i> Add Employee
+            </button>
+
+          </div>
+        </div>
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Search employees..." oninput="filterEmployees()">
+          <button onclick="filterEmployees()"><i class="fas fa-search"></i></button>
+        </div>
+        <div id="table_employees" class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="th_click" onclick="sortTable('id')">ID ▲▼</th>
+                  <th class="th_click" onclick="sortTable('name')">Name ▲▼</th>
+                  <th>Position</th><th>Department</th><th>Contact</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="employeeTable_tb"></tbody>
+            </table>
+         
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Add an employee</h2>
+        </div>
+        <form id="employee-form" class="employee-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="name">Name</label>
+              <input type="text" id="name" class="form-input" placeholder="Enter the name of employee">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="position">Position</label>
+              <input type="text" id="position" class="form-input" placeholder="Enter his/her Position">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="department">Department</label>
+              <input type="text" id="department" class="form-input" placeholder="Enter his/her Department">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="contact">Contact</label>
+              <input type="text" id="contact" class="form-input" placeholder="Enter his/her Contact(Email/tel)">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <button onclick="addEmployee()" id="myButton"  type="button" class="btn btn-primary">
+              <i class="fas fa-plus"></i> Add
+            </button>
+          </div>
+        </form>
+      </div>
+  <footer>
+    <p>&copy; 2025 Stock Manager Pro. All rights reserved.</p>
+  </footer>
+  <script src="script.js"></script>
+  <script>
+    
+    let editIndex = -1;
+    const btn = document.getElementById("myButton");
+
+    //Automatic Employee ID Generation
+    function generatEmployeeId() {
+      const employee = getEmployee();
+      // Format as EMPL-0001, EMPL-0002, etc. with leading zeros
+      const nextId = (employee.length + 1).toString().padStart(4, '0');
+      return `EMPL-${nextId}`;
+    }
+
+
+    // Adds a new employee or updates an existing one after validating the form inputs.
+    function addEmployee() {
+      const name = nameInput.value.trim();
+      const position = positionInput.value.trim();
+      const department = departmentInput.value.trim();
+      const contact = contactInput.value.trim();
+
+
+      if (!name || !position || !department || !contact) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      const employee = getEmployee();
+      const id = generatEmployeeId(); // Generate the ID
+
+      if (editIndex === -1) {
+        employee.push({id, name, position, department, contact });
+        showNotification("Employee added successfully!", "success");
+      } else {
+    // Keep the existing ID when editing
+    const existingId = employee[editIndex].id;
+    employee[editIndex] = { id: existingId, name , position, department, contact };
+    showNotification("Employee edited successfully!", "editing");
+    editIndex = -1;
+    }
+      saveEmployee(employee);
+      renderemployee();
+      window.location.href = "#notification"; 
+      nameInput.value  = positionInput.value = departmentInput.value = contactInput.value = "";
+    }
+
+
+    //Dynamically displays the stored employees in an HTML table or shows a message if empty.
+    function renderemployee() {
+      const employee = getEmployee();
+      if (employee.length === 0) {
+          employeeTable.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 20px; color: #6c757d;">
+                <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                <p>No employees . Add your first employee!</p>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+      employeeTable.innerHTML = "";
+      employee.forEach((item, index) => {
+        employeeTable.innerHTML += `
+          <tr>
+            <td>${item.id}</td>
+            <td>${item.name}</td>
+            <td>${item.position}</td>
+            <td>${item.department}</td>
+            <td>${item.contact}</td>
+            <td class="action-cell">
+              <button class="action-btn edit-btn" onclick="editEmployee(${index})" aria-label="Edit employee"><i class="fas fa-edit"></i></button>
+              <button class="action-btn delete-btn" onclick="deleteEmployee(${index})" aria-label="Delete employee"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`;
+      });
+      btn.innerHTML = '<i class="fas fa-plus"></i> Add';
+    }
+
+    //Deletes a employee from the list after user confirmation and refreshes the display.
+    function deleteEmployee(index) {
+      const employee = getEmployee();
+      if (confirm("you really want to delete this employee?")) {
+        employee.splice(index, 1);
+        saveEmployee(employee);
+        renderemployee();
+      }
+    }
+
+    //Loads a employee’s data into the form for editing.
+    function editEmployee(index) {
+      const employees = getEmployee();
+      const employee = employees[index];
+      
+      nameInput.value = employee.name;
+      positionInput.value = employee.position;
+      departmentInput.value = employee.department;
+      contactInput.value = employee.contact;
+
+      editIndex = index;
+      btn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+      window.location.href = "#employee-form";
+    }
+    
+    //Export the current employee list to an Excel file using SheetJS.
+    function exportEmployee() {
+    const employee = getEmployee(); // assumes you already have getEmployee()
+
+    if (employee.length === 0) {
+      alert("No employees to export.");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(employee); // convert JSON to sheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "employee");
+
+    XLSX.writeFile(workbook, "employee-data.xlsx"); // download file
+    }
+  
+    function filterEmployees() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      const employee = getEmployee();
+      const filtered = employee.filter(item => 
+        item.name.toLowerCase().includes(searchTerm) || 
+        item.id.toLowerCase().includes(searchTerm)
+      );
+      renderFilteredemployee(filtered);
+    }
+    function renderFilteredemployee(filteredemployee) {
+  const employeeTable = document.getElementById("employeeTable_tb");
+  
+  if (filteredemployee.length === 0) {
+    employeeTable.innerHTML = `
+      <tr>
+        <td colspan="6" class="no-results">
+          <i class="fas fa-search-minus"></i>
+          <p>No employees match your search</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  employeeTable.innerHTML = "";
+  filteredemployee.forEach((item, index) => {
+    employeeTable.innerHTML += `
+      <tr>
+        <td>${item.id}</td>
+        <td>${item.name}</td>
+        <td>${item.position}</td>
+        <td>${item.department}</td>
+        <td>${item.contact}</td>
+        <td class="action-cell">
+          <button class="action-btn edit-btn" onclick="editEmployee(${index})">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="action-btn delete-btn" onclick="deleteEmployee(${index})">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+
+    //Sorting Table Columns
+    function sortTable(column) {
+      const employee = getEmployee();
+      employee.sort((a, b) => a[column] > b[column] ? 1 : -1);
+      saveEmployee(employee);
+      renderemployee();
+    }
+
+    const nameInput = document.getElementById("name");
+    const positionInput = document.getElementById("position");
+    const departmentInput = document.getElementById("department");
+    const contactInput = document.getElementById("contact");
+    const employeeTable = document.getElementById("employeeTable_tb");
+
+    renderemployee();
+  </script>
+
+  
+</body>
+</html>

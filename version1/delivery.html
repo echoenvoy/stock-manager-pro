@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Manager - Delivery</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="Style.css">
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <link rel="icon" href="chariot.png" type="image/png" sizes="264x264">
+  <style>
+    /*For dropdown*/
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+    z-index: 1;
+    border-radius: 4px;
+  }
+
+  .dropdown-menu a {
+    color: #333;
+    padding: 8px 16px;
+    text-decoration: none;
+    display: block;
+  }
+
+  .dropdown-menu a:hover {
+    background-color: #f5f5f5;
+  }
+
+  .dropdown:hover .dropdown-menu {
+    display: block;
+  }
+  /* Dark mode for dropdown */
+  body.dark-mode .dropdown-menu {
+    background-color: #2c2c2c;
+    border: 1px solid #444;
+  }
+
+  body.dark-mode .dropdown-menu a {
+    color: #f1f1f1;
+  }
+  body.dark-mode .dropdown-menu a:hover {
+    background-color: #3e1c1c;
+  }
+  @media (max-width: 768px) {
+    .action-cell {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .back-btn {
+      position: relative;
+      margin-bottom: 15px;
+    }
+  }
+  
+
+  </style>
+</head>
+<body>
+  <!--header-->
+  <header>
+    <div class="logo">
+      <i class="fas fa-boxes"></i>
+      <h1>StockMaster Professional</h1>
+    </div>
+  <div class="header-controls">
+    <button class="theme-toggle" id="theme-toggle">
+        <i class="fas fa-moon"></i>
+    </button>
+  </div>
+  </header>
+
+    <nav class="main-nav">
+  <ul class="nav-list">
+      <li><a href="main.html" class="nav-link" data-page="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="stock.html" class="nav-link" data-page="products"><i class="fas fa-box"></i> Products</a></li>
+      <li><a href="delivery.html" class="nav-link active" data-page="delivery"><i class="fas fa-truck"></i> Delivery</a></li>
+      <li><a href="Employee.html" class="nav-link" data-page="delivery"><i class="fas fa-users"></i> Employee</a></li>
+      <li><a href="reports.html" class="nav-link"><i class="fas fa-chart-line"></i> Reports</a></li>
+      <li><a href="settings.html" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
+  </ul>
+  </nav>
+
+  <div id="notification" class="notification hidden"></div>
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Deliveries List</h2>
+          <div class="section-actions">
+
+            <button class="btn btn-outline" onclick="exportDelivery()">
+              <i class="fas fa-file-export"></i> Export
+            </button>
+
+            
+
+            <div class="dropdown">
+              <button class="btn btn-outline dropdown-toggle" type="button" id="filterDropdown" data-toggle="dropdown">
+                <i class="fas fa-filter"></i> Filter
+              </button>
+              <div class="dropdown-menu" aria-labelledby="filterDropdown">
+                <a class="dropdown-item" href="#" onclick="filterDeliveries('')">All Deliveries</a>
+                <a class="dropdown-item" href="#" onclick="filterDeliveries('pending')">Pending</a>
+                <a class="dropdown-item" href="#" onclick="filterDeliveries('in-progress')">In Progress</a>
+                <a class="dropdown-item" href="#" onclick="filterDeliveries('delivered')">Delivered</a>
+              </div>
+            </div>
+
+
+            <button onclick="location.href='#delivery-form'" class="btn btn-secondary" id="add-delivery-btn">
+              <i class="fas fa-plus"></i> New delivery
+            </button>
+
+          </div>
+        </div>
+        <div class="table-container" id="table_delivery">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Delivery</th>
+                <th>Employee</th>
+                <th>ID Employee</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Delivery Date</th>
+                <th>Reception Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="deliveryTable_tb">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">Add a delivery</h2>
+        </div>
+        <form id="delivery-form" class="delivery-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="Employee_name">Name of Employee :</label>
+              <select id="Employee_name" class="form-input"></select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="name_product">Product :</label>
+              <select id="name_product" class="form-input"></select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="Quantity">Quantity :</label>
+              <input type="number" id="Quantity" class="form-input" placeholder="Quantity">
+            </div>
+
+            
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="dateOrder">Delivery Date :</label>
+              <input type="date" id="dateOrder" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="dateReceived">Reception Date :</label>
+              <input type="date" id="dateReceived" class="form-input">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <button onclick="addDelivery()" type="button" class="btn btn-secondary">
+              <i class="fas fa-truck"></i> Save the Delivery
+            </button>
+          </div>
+        </form>
+      </div>
+
+  <footer>
+    <p>&copy; 2025 Stock Manager Pro. All rights reserved.</p>
+  </footer>
+  <script src="script.js"></script>
+  <script>
+
+    //→ Populates the product dropdown with items from stock.
+    function fillSelect() {
+      const stock = getStock();
+      const select = document.getElementById("name_product");
+      if (stock.length === 0) {
+        const option = document.createElement("option");
+        option.textContent = "No products available";
+        option.disabled = true;
+        option.selected = true;
+        document.getElementById("name_product").appendChild(option);
+        return;
+      }
+      select.innerHTML = stock.map(item => `<option value="${item.name}">${item.name}</option>`).join("");
+    }
+    //→ Populates the name of employees dropdown with items from stock.
+    function fillSelect2() {
+      const employee = getEmployee();
+      const select = document.getElementById("Employee_name");
+      if (employee.length === 0) {
+        const option = document.createElement("option");
+        option.textContent = "No employee available";
+        option.disabled = true;
+        option.selected = true;
+        document.getElementById("Employee_name").appendChild(option);
+        return;
+      }
+      select.innerHTML = employee.map(item => `<option value="${item.name}">${item.name}</option>`).join("");
+    }
+
+    function generateDeliveryId() {
+      const stock = getDelivery();
+      // Format as DELV-0001, DELV-0002, etc. with leading zeros
+      const nextId = (stock.length + 1).toString().padStart(4, '0');
+      return `DELV-${nextId}`;
+    }
+
+    //Validates and adds a new delivery while updating the stock.
+    function addDelivery() {
+      const employeeInput = document.getElementById("Employee_name");
+      const productSelect = document.getElementById("name_product");
+      const quantityInput = document.getElementById("Quantity");
+      const dateOrderInput = document.getElementById("dateOrder");
+      const dateReceivedInput = document.getElementById("dateReceived");
+      
+
+      
+      const idDilevry = generateDeliveryId();
+      const name = employeeInput.value;
+      const product = productSelect.value;
+
+      //find the id of the employee
+      const employee = getEmployee();
+      const index = employee.findIndex((item) => item.name === name);
+      const idemployee = employee[index].id;
+
+      const quantity = parseFloat(quantityInput.value);
+      const dateOrder = dateOrderInput.value;
+      const dateReceived = dateReceivedInput.value;
+      const status = "";
+
+      if (!/^[a-zA-Z]+(?:\s[a-zA-Z]+){0,2}$/.test(name) || name.length < 2 || name.length > 30) {
+        alert("Invalid name! Use 2-30 letters with spaces between names");
+        return;
+      }
+
+      if (!name  || !product || isNaN(quantity) || !dateOrder || !dateReceived) {
+        alert("Please fill in all fields.");
+        return;
+      }
+      if (new Date(dateOrder) > new Date(dateReceived)) {
+        alert("Reception date must be after delivery date.");
+        return;
+      }
+      const stock = getStock();
+      const productStock = stock.find(p => p.name === product);
+      if (!productStock || productStock.qty < quantity) {
+        alert(`Insufficient stock for ${product}! Available: ${productStock?.qty || 0}`);
+        return;
+      }
+      removeProduct(product, quantity);
+
+      const deliveries = getDelivery();
+      deliveries.push({
+        idDilevry : idDilevry,
+        Employee_name: name,
+        name_product: product,
+        idemployee : idemployee,
+
+        Quantity: quantity,
+        dateOrder,
+        dateReceived,
+        status
+      });
+
+      saveDelivery(deliveries);
+      showNotification("Delivery added successfully!", "success");
+      renderDelivery();
+      window.location.href = "#notification"; 
+      document.getElementById("delivery-form").reset();
+    }
+    
+    function determineDelivery(index) {
+      const deliveries = getDelivery();
+      if (index < 0 || index >= deliveries.length) return "unknown";
+      
+      const delivery = deliveries[index];
+      // Keep existing status if already set and valid
+      if (delivery.status && ["pending", "in-progress", "delivered"].includes(delivery.status)) {
+        return delivery.status;
+      }
+      
+      // Calculate new status
+      const now = new Date();
+      const deliveryDate = new Date(delivery.dateOrder);
+      const receptionDate = new Date(delivery.dateReceived);
+
+      let newStatus = "pending";
+      if (now >= deliveryDate && now < receptionDate) {
+        newStatus = "in-progress";
+      } else if (now >= receptionDate) {
+        newStatus = "delivered";
+      }
+      
+      deliveries[index].status = newStatus;
+      saveDelivery(deliveries);
+      return newStatus;
+    }
+
+    // Deletes a delivery and restores the product to stock if it was still pending or in-progress
+    function deleteDelivery(index) {
+      const deliveries = getDelivery();
+      const delivery = deliveries[index];
+
+      if (index < 0 || index >= deliveries.length) return;
+      if (deliveries[index].status === "delivered") {
+        alert("This delivery has already been completed and cannot be canceled ");
+        return; // Stop further editing
+      }
+
+      //Asks for confirmation
+      const confirmed = confirm("Are you sure you want to cancel this delivery?");
+
+      if (confirmed){
+        addProduct(delivery.name_product, delivery.Quantity);
+        deliveries.splice(index, 1);
+        saveDelivery(deliveries);
+        renderDelivery();
+      }
+      
+    }
+    
+
+    // Loads delivery data into the form for editing if it's not already in-progress or delivered.
+    function editDelivery(index) {
+      const deliveries = getDelivery();
+      if (index < 0 || index >= deliveries.length) return;
+
+      // Check if the delivery status is "delivered" or in-progress
+      if (deliveries[index].status === "delivered") {
+        alert("This delivery is already delivered and cannot be edited ");
+        return; // Stop further editing
+      }
+      else if (deliveries[index].status === "in-progress") {
+        alert("This delivery is already  on its way, and cannot be edited.");
+        return; // Stop further editing
+      }
+
+      // If not delivered, allow editing by filling the form
+      const delivery = deliveries[index];
+
+      document.getElementById("Employee_name").value = delivery.Employee_name;
+      document.getElementById("name_product").value = delivery.name_product;
+      document.getElementById("Quantity").value = delivery.Quantity;
+      document.getElementById("dateOrder").value = delivery.dateOrder;
+      document.getElementById("dateReceived").value = delivery.dateReceived;
+
+      // Save current index for update later
+      window.currentEditIndex = index;
+
+      // Change button text and event handler to update mode
+      const btn = document.querySelector("#delivery-form button");
+      btn.innerHTML = '<i class="fas fa-edit"></i> Edit Delivery';
+      window.location.href = "#delivery-form"; 
+      btn.onclick = updateDelivery;
+      
+ 
+    }
+    // Updates an existing delivery entry and adjusts stock accordingly.
+    function updateDelivery() {
+      const index = window.currentEditIndex;
+      const deliveries = getDelivery();
+      const oldDelivery = deliveries[window.currentEditIndex];
+      if (index === undefined) return;
+
+      const customerInput = document.getElementById("Employee_name");
+      const productSelect = document.getElementById("name_product");
+      const quantityInput = document.getElementById("Quantity");
+      const dateOrderInput = document.getElementById("dateOrder");
+      const dateReceivedInput = document.getElementById("dateReceived");
+
+      const name = customerInput.value.trim();
+      const product = productSelect.value;
+      const idDilevry = oldDelivery.idDilevry;
+
+      const employeeList = getEmployee();
+      const employeeIndex = employeeList.findIndex((e) => e.name === name);
+
+      const idemployee = employeeList[employeeIndex].id;
+      const quantity = parseFloat(quantityInput.value);
+      const dateOrder = dateOrderInput.value;
+      const dateReceived = dateReceivedInput.value;
+      const status='';
+      
+      if (quantity <= 0) {
+        alert("Quantity must be greater than 0");
+        return;
+      }
+      if (!name  || !product || isNaN(quantity) || !dateOrder || !dateReceived) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      if (!/^[a-zA-Z]+(?:\s[a-zA-Z]+){0,2}$/.test(name) || name.length < 2 || name.length > 30) {
+        alert("Invalid name! Use 2-30 letters with spaces between names");
+        return;
+      }
+
+      if (new Date(dateOrder) > new Date(dateReceived)) {
+        alert("Reception date must be after delivery date.");
+        return;
+      }
+      
+
+      //Changement :
+      
+      addProduct(oldDelivery.name_product, oldDelivery.Quantity); // Return old stock
+      removeProduct(product, quantity); // Deduct new stock
+
+      deliveries[index] = {
+        idDilevry : idDilevry,
+        Employee_name: name,
+        name_product: product,
+        idemployee : idemployee,
+
+        Quantity: quantity,
+        dateOrder,
+        dateReceived,
+        status
+      };
+      
+
+      saveDelivery(deliveries);
+      showNotification("Delivery edited successfully!", "editing");
+      renderDelivery();
+
+      // Reset form & button
+      customerInput.value = "";
+      quantityInput.value = "";
+      dateOrderInput.value = "";
+      dateReceivedInput.value = "";
+      
+      document.querySelector("#delivery-form button").textContent = "Save the Delivery";
+      document.querySelector("#delivery-form button").onclick = addDelivery;
+
+      delete window.currentEditIndex;
+      window.location.href = "#notification"; 
+    }
+
+    //Displays all deliveries in a table with current statuses and action buttons.
+    function renderDelivery() {
+      const deliveries = getDelivery();
+      const table = document.getElementById("deliveryTable_tb");
+      if (deliveries.length === 0) {
+          table.innerHTML = `
+            <tr>
+              <td></td>
+              <td colspan="6" style="text-align: center; padding: 80px; color: #6c757d;">
+                <i class="fas fa-box-open" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                <p>No delivery . Add the first Delivery!</p>
+              </td>
+              
+            </tr>
+          `;
+          return;
+      }
+      table.innerHTML = "";
+      deliveries.forEach((item, index) => {
+        const statusText = determineDelivery(index);
+        table.innerHTML += `
+          <tr>
+            <td>${item.idDilevry}</td>
+            <td>${item.Employee_name}</td>
+            <td>${item.idemployee}</td>
+            <td>${item.name_product}</td>
+            <td>${item.Quantity}</td>
+            <td>${formatDate(item.dateOrder)}</td>
+            <td>${formatDate(item.dateReceived)}</td>
+            <td><span class="status-badge ${statusText}">${statusText}</span></td>
+            <td class="action-cell">
+              <button  class="action-btn edit-btn" onclick="editDelivery(${index})"><i class="fas fa-edit"></i></button>
+              <button class="action-btn delete-btn" onclick="deleteDelivery(${index})"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    // Adds or updates a product in stock with the specified quantity.
+    function addProduct(name, quantity) {
+      const stock = getStock();
+      const product = stock.find(p => p.name === name);
+      if (product) {
+        product.qty += quantity;
+      } else {
+        stock.push({ name, qty: quantity });
+      }
+      saveStock(stock);
+    }
+
+    //Deducts quantity from a product in stock and removes it if depleted.
+    function removeProduct(name, quantity) {
+      const stock = getStock();
+      const index = stock.findIndex((item) => item.name === name);
+
+      if (index !== -1 && stock[index].qty > 0) {
+        stock[index].qty -= quantity;
+
+        if (stock[index].qty <= 0) {
+          stock.splice(index, 1);
+        }
+
+        saveStock(stock);
+      }
+    }
+    
+    
+    
+    // filtring
+    function filterDeliveries(status) {
+      const deliveries = getDelivery();
+      const filtered = deliveries.map((delivery, index) => {
+        return {...delivery, originalIndex: index}; // Preserve original index
+      }).filter(delivery => {
+        const currentStatus = determineDelivery(delivery.originalIndex);
+        return status === '' || currentStatus === status;
+      });
+      
+      renderFilteredDeliveries(filtered);
+    }
+    function renderFilteredDeliveries(filteredDeliveries) {
+      const table = document.getElementById("deliveryTable_tb");
+      
+      if (filteredDeliveries.length === 0) {
+        table.innerHTML = `<tr><td colspan="8">No matching deliveries</td></tr>`;
+        return;
+      }
+      
+      table.innerHTML = filteredDeliveries.map(item => {
+        const statusText = determineDelivery(item.originalIndex);
+        return `
+        <tr>
+            <td>${item.idDilevry}</td>
+            <td>${item.Employee_name}</td>
+            <td>${item.idemployee}</td>
+            <td>${item.name_product}</td>
+            <td>${item.Quantity}</td>
+            <td>${formatDate(item.dateOrder)}</td>
+            <td>${formatDate(item.dateReceived)}</td>
+            <td><span class="status-badge ${statusText}">${statusText}</span></td>
+            <td class="action-cell">
+              <button  class="action-btn edit-btn" onclick="editDelivery(${item.originalIndex})"><i class="fas fa-edit"></i></button>
+              <button class="action-btn delete-btn" onclick="deleteDelivery(${item.originalIndex})"><i class="fas fa-trash"></i></button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+    
+
+
+    //initialise
+    fillSelect();
+    fillSelect2();
+    renderDelivery();
+  </script>
+
+</body>
+</html>
