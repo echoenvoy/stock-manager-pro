@@ -7,7 +7,7 @@ https://drive.google.com/file/d/1qWKB2iVnhDoj8i4UTLiqPhlPdo7NVuue/view?usp=drive
 
 ✔️ Version 1 — Frontend Only (HTML + CSS + JS + LocalStorage)
 
-This version works 100% in the browser.
+✅ This version works 100% in the browser.
 
 It uses LocalStorage, meaning:
 
@@ -36,7 +36,7 @@ Not scalable
 
 ✔️ Version 2 — Fullstack (Flask Backend + Frontend)
 
-This version uses: 
+✅ This version uses: 
 
 SAME CODE HTML & CSS
 
@@ -57,3 +57,34 @@ Real authentication system
 Real-time updates
 
 Exports, charts, employees, deliveries… everything managed through the backend
+
+---
+
+### 🌐 **Two Versions of the Application**
+
+To ensure flexibility, scalability, and accessibility, the system was developed in **two distinct versions**, each designed for different usage scenarios:
+
+---
+
+#### ⚡ **1. Frontend-Only Version (HTML, CSS, JavaScript, LocalStorage)**
+
+🖥️ **Pure client-side application**
+💾 **Data stored locally** using `localStorage`
+🔌 **No backend or server required**
+🚀 **Fast, lightweight, and works offline**
+🎯 Ideal for demos, small businesses, and devices without internet access
+
+---
+
+#### 🐍 **2. Fullstack Version with Flask Backend**
+
+🔗 **Flask API** handling all business logic
+
+🗄️ **Database integration** (PostgreSQL / SQLite)
+
+🔐 **Secure authentication** (session or token-based)
+
+📡 **Real-time operations** and multi-user support
+📈 **Scalable**, reliable, and ready for production environments
+
+---
