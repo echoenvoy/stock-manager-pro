@@ -1,0 +1,29 @@
+cd C:\Users\Hamza\Desktop\Projet_stage\prov3\backend
+python -m venv venv
+venv\Scripts\activate
+python database.py
+cd ..
+python run.py
+python app.py
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+
+
+# Test if server is responding
+curl http://localhost:5000/
+
+
+# Test products API
+curl http://localhost:5000/api/products
+
+ls -la stock_manager.db
+psql -h localhost -U hamza -d stock_manager
+
+# Check if virtual environment is activated
+which python
+
+
+
+
+
+database connect in sql shell  :
+\c stock_manager;
