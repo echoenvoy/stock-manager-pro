@@ -6,7 +6,7 @@ https://drive.google.com/file/d/1qWKB2iVnhDoj8i4UTLiqPhlPdo7NVuue/view?usp=drive
 ## 🌐 Live Demo
 If you want to consult (visit) the site, click here:
 
-👉 **https://echoenvoy.github.io/Project_1internship_onssa/version%201/login.html**
+👉 **https://echoenvoy.github.io/stock-manager-pro/version%201/login.html**
 
 Use these credentials to log in:
 
